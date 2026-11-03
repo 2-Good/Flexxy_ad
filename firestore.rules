@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all unknown paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // User Profile Collection: strictly partitioned by user auth UID
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Conversations Collection: strictly partitioned by userId matching auth.uid
+    match /conversations/{conversationId} {
+      // Single-document fetch (get)
+      allow get: if isSignedIn() && isValidId(conversationId) &&
+                    (resource == null || resource.data.userId == request.auth.uid);
+
+      // Collection query (list) enforcing that the query filters by the authenticated user
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidId(conversationId) &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(conversationId) &&
+                       (resource == null || resource.data.userId == request.auth.uid) &&
+                       request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(conversationId) &&
+                       (resource == null || resource.data.userId == request.auth.uid);
+
+      // Subcollection: Messages
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(messageId);
+        allow list: if isSignedIn();
+        allow create, update: if isSignedIn() && isValidId(messageId) &&
+                                 request.resource.data.userId == request.auth.uid;
+        allow delete: if isSignedIn() && isValidId(messageId) &&
+                         (resource == null || resource.data.userId == request.auth.uid);
+      }
+    }
+  }
+}

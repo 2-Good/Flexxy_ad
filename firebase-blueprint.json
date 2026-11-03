@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with display name and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 64 },
+        "email": { "type": "string", "maxLength": 256 },
+        "avatarSeed": { "type": "string", "maxLength": 8 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "theme": { "type": "string", "enum": ["espresso", "obsidian", "amber", "mocha"] },
+            "motionSpeed": { "type": "string", "enum": ["cinematic", "snappy", "reduced"] },
+            "glassIntensity": { "type": "string", "enum": ["subtle", "balanced", "deep"] },
+            "fontSize": { "type": "string", "enum": ["sm", "base", "lg"] },
+            "enable3dTilt": { "type": "boolean" },
+            "enableParticles": { "type": "boolean" },
+            "soundEffects": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["uid", "name", "createdAt"]
+    },
+    "Conversation": {
+      "title": "Conversation Dialogue",
+      "description": "Chat dialogue thread belonging to a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "preview": { "type": "string", "maxLength": 240 },
+        "isPinned": { "type": "boolean" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "createdAt", "updatedAt"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "Individual message within a conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "conversationId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["user", "assistant", "system"] },
+        "content": { "type": "string", "maxLength": 10000 },
+        "timestamp": { "type": "string", "maxLength": 32 },
+        "model": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "conversationId", "userId", "role", "content", "timestamp", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles keyed by auth UID"
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Conversations belonging to authenticated users"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages belonging to a conversation"
+    }
+  }
+}
